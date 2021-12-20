@@ -1,13 +1,29 @@
-let Parser = require('rss-parser');
-let parser = new Parser();
+const { XMLParser } = require('fast-xml-parser');
+const fetch = require('node-fetch');
+const { sources } = require('./sources.json');
+
 
 (async () => {
+  const results = [];
+  const parser = new XMLParser();
 
-  let feed = await parser.parseURL('https://www.reddit.com/.rss');
-  console.log(feed.title);
+  const sourceParsingPromises = sources.map(async (source) => {
+    const response = await fetch(source.link);
+    const xml = await response.textConverted();
+    const feed = parser.parse(xml);
 
-  feed.items.forEach(item => {
-    console.log(item.title + ':' + item.link)
+    feed.rss.channel.item.forEach(item => {
+      results.push({
+        title: item.title,
+        link: item.link,
+        author: item.author ?? null,
+        category: item.category,
+        date: item.pubDate,
+      });
+    });
   });
+  
+  await Promise.all(sourceParsingPromises)
 
+  console.log('results', results);
 })();
