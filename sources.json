@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "name": "Obozrevatel",
+      "link": "https://www.obozrevatel.com/out/rss/lastnews.xml"
+    },
+    {
+      "name": "Ukrainian pravda main",
+      "link": "https://www.pravda.com.ua/rss/view_mainnews/"
+    },
+    {
+      "name": "Ukrainian pravda",
+      "link": "https://www.pravda.com.ua/rss/view_news/"
+    }
+  ]
+}
