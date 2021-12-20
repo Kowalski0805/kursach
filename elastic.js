@@ -2,7 +2,7 @@
 
 const { Client } = require('@elastic/elasticsearch');
 
-export default class Elastic {
+class Elastic {
     client;
     index;
 
@@ -12,16 +12,16 @@ export default class Elastic {
     }
 
     add(data) {
-        return client.index({index, body: data});
+        return this.client.index({index: this.index, body: data});
     }
 
     refresh() {
-        return client.indices.refresh({index});
+        return this.client.indices.refresh({index: this.index});
     }
         
     async get(filter) {
-        const { body } = await client.search({
-            index,
+        const { body } = await this.client.search({
+            index: this.index,
             body: {
                 query: filter
             },
