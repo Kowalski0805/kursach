@@ -169,29 +169,9 @@ const channels = [{
     access_hash: '13467083740798847362'
 }];
 
-const sleepp = ms => new Promise((resolve) => {
-  setTimeout(resolve, ms);
-});
-
-const getUserByDialogs = async () => {
-  const dialogs = await api.call('messages.getDialogs', {offset_peer: {_: 'inputPeerEmpty'}});
-  console.log(dialogs);
-//   return createUser(contacts.users.find(e => e.id === id));
-};
-
 const logOut = () => api.call('auth.logOut', {});
 
-const getChats = async (filter) => {
-  const chats = await api.call('messages.getAllChats', {except_ids: []});
-  return createChat(chats.chats.find(e => Object.entries(filter).every(([key, val]) => e[key] === val)));
-};
-
-const getUserByGroup = async (id, channel) => {
-  const participants = await api.call('channels.getParticipants', {channel, filter: {_: 'channelParticipantsRecent'}});
-  return participants;  
-};
-
-(async() => {
+const fetchTgData = async() => {
 //   console.log(await logOut());
 //   console.log(await login());
   // return;
@@ -217,4 +197,8 @@ const getUserByGroup = async (id, channel) => {
   // })
   // console.log(req)
 
-})();
+};
+
+module.exports = {
+  fetchTgData,
+};
