@@ -16,28 +16,32 @@ const fetchRssData = async () => {
   const parser = new XMLParser();
 
   const sourceParsingPromises = sources.map(async (source) => {
-    const response = await fetch(source.link);
-    const xml = await response.textConverted();
-    const feed = parser.parse(xml);
+    try {
+      const response = await fetch(source.link);
+      const xml = await response.textConverted();
+      const feed = parser.parse(xml);
 
-    const sourceItemParsingPromises = feed.rss.channel.item.map(async (item) => {
-      const link = item.link;
+      const sourceItemParsingPromises = feed.rss.channel.item.map(async (item) => {
+        const link = item.link;
 
-      try {
-        results.push({
-          title: item.title,
-          link,
-          body: await getArticleBody(link, source.selector),
-          author: item.author ?? null,
-          category: item.category,
-          date: new Date(item.pubDate),
-        });
-      } catch (error) {
-        console.error(error)
-      }
-    });
+        try {
+          results.push({
+            title: item.title,
+            link,
+            body: await getArticleBody(link, source.selector),
+            author: item.author ?? null,
+            category: item.category,
+            date: new Date(item.pubDate),
+          });
+        } catch (error) {
+          console.error(error)
+        }
+      });
 
-    await Promise.all(sourceItemParsingPromises);
+      await Promise.all(sourceItemParsingPromises);
+    } catch (error) {
+      console.error(error);
+    }
   });
   
   await Promise.all(sourceParsingPromises);
