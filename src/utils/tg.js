@@ -3,13 +3,23 @@ const { sleep } = require('@mtproto/core/src/utils/common');
 const prompt = require('prompt');
 const path = require('path');
 
+const { getEnv } = require('../../config/config');
+
+const {
+  apiId,
+  apiHash,
+  phoneNumber,
+  password,
+  defaultDcId,
+} = getEnv('tg');
+
 /*/ SIM 1
 const api_id = '6019300';
 const api_hash = 'cf61787dee32ea17ec86d1b1edea6858';
 //*/
 // SIM 2
-const api_id = '6214343';
-const api_hash = '5fe1a847a30f88e87c143250f899d658';
+// const api_id = '6214343';
+// const api_hash = '5fe1a847a30f88e87c143250f899d658';
 /*/
 // Ben
 const api_id = '6263581';
@@ -18,8 +28,8 @@ const api_hash = 'f826f7330614dc2b57bfe8a06d629ab9';
  
 // 1. Create an instance
 const mtproto = new MTProto({
-  api_id,
-  api_hash,
+  api_id: apiId,
+  api_hash: apiHash,
 
   storageOptions: {
     path: path.resolve(__dirname, './data/1.json'),
@@ -27,7 +37,7 @@ const mtproto = new MTProto({
 });
 
 // (async() => { await mtproto.setDefaultDc(4); })()
-(async() => { await mtproto.setDefaultDc(2); })()
+(async() => { await mtproto.setDefaultDc(defaultDcId); })()
  
 const api = {
   call(method, params, options = {}) {
@@ -115,16 +125,16 @@ function checkPassword({ srp_id, A, M1 }) {
 
 
 // const phone = '+972545849319'; // SIM 1
-const phone = '+79990012963'; // SIM 2
+// const phone = '+79990012963'; // SIM 2
 // const phone = '+972547213117' // Ben
-const password = 's1m2m0d3m';
+// const password = 's1m2m0d3m';
 
 const login = async () => {
   const user = await getUser();
-  console.log(user)
+  // console.log(user)
 
   if (!user) {
-    const { phone_code_hash } = await sendCode(phone);
+    const { phone_code_hash } = await sendCode(phoneNumber);
 
     prompt.start();
 
@@ -133,7 +143,7 @@ const login = async () => {
     try {
       const authResult = await signIn({
         code,
-        phone,
+        phone: phoneNumber,
         phone_code_hash,
       });
 
@@ -164,40 +174,49 @@ const login = async () => {
   }
 };
 
-const channels = [{
-    id: 1134948258,
-    access_hash: '13467083740798847362'
-}];
+const getChannelData = ({id, access_hash}) => api.call('messages.getHistory',
+  {
+    limit: 10, peer: {
+      _: 'inputPeerChannel',
+      channel_id: id,
+      access_hash,
+    }
+  });
 
 const logOut = () => api.call('auth.logOut', {});
 
 const fetchTgData = async() => {
-//   console.log(await logOut());
-//   console.log(await login());
-  // return;
+  // console.log('logout', await logOut());
+  // console.log('login', await login());
+  await login();
   
-//   const req = await api.call('messages.getDialogs', {limit: 10, offset_peer: {
-//     _: 'inputPeerEmpty',
-//   } })
-//   console.log(req)
-  
-  const req = await api.call('messages.getHistory', {limit: 10, peer: {
-      _: 'inputPeerChannel',
-      channel_id: channels[0].id,
-      access_hash: channels[0].access_hash,
-  }})
-  console.log(req.messages.map(m => ({id: m.id, message: m.message})))
-  
-  // const req = await api.call('channels.getFullChannel', {
-  //   channel: {
-  //     _: 'inputChannel',
-  //     channel_id: CHANNEL_ID,
-  //     access_hash: CHANNEL_HASH
-  //   }
-  // })
-  // console.log(req)
+  const dialogs = await api.call('messages.getDialogs', {limit: 10, offset_peer: {
+    _: 'inputPeerEmpty',
+  } });
 
+  const channels = dialogs.chats.filter((dialog) => dialog._ === 'channel');
+
+  const channelsPromises = channels.map(async (channel) => {
+    const channelData = await getChannelData(channel);
+    return channelData.messages.map((item) => {
+      const [title, ...body] = item.message.split('\n\n');
+
+      return {
+        title,
+        link: `https://t.me/${channel.username ? channel.username : `c/${channel.id}`}/${item.id}`,
+        body: body.filter(elem => elem).join('\n'),
+        author: item.peer_id.channel_id,
+        category: null,
+        date: new Date(item.date),
+      };
+    });
+  });
+
+  const result = await Promise.all(channelsPromises);
+  return result;
 };
+
+fetchTgData();
 
 module.exports = {
   fetchTgData,
