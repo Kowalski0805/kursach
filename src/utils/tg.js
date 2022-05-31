@@ -194,11 +194,14 @@ const fetchTgData = async() => {
     _: 'inputPeerEmpty',
   } });
 
-  const channels = dialogs.chats.filter((dialog) => dialog._ === 'channel');
+  const channels = dialogs.chats.filter((dialog) => dialog._ === 'channel' && ['1449473117', '1134948258'].includes(dialog.id));
+  console.log(channels)
 
-  const channelsPromises = channels.map(async (channel) => {
+  const channelsPromises = channels.flatMap(async (channel) => {
     const channelData = await getChannelData(channel);
     return channelData.messages.map((item) => {
+      if (!item.message) return;
+
       const [title, ...body] = item.message.split('\n\n');
 
       return {
@@ -209,11 +212,11 @@ const fetchTgData = async() => {
         category: null,
         date: new Date(item.date),
       };
-    });
+    }).filter(e => e);
   });
 
   const result = await Promise.all(channelsPromises);
-  return result;
+  return result.flatMap(e => e);
 };
 
 fetchTgData();
