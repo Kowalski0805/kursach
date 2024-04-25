@@ -1,5 +1,5 @@
 {
-  "sources": [
+  "rssSources": [
     {
       "name": "Ukrainian pravda",
       "link": "https://www.pravda.com.ua/rss/view_news/",
@@ -15,5 +15,6 @@
       "link": "https://www.radiosvoboda.org/api/zrqiteuuir",
       "selector": "#article-content > div > p"
     }
-  ]
+  ],
+  "tgSources": ["1449473117", "1134948258"]
 }

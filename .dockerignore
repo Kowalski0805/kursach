@@ -1,0 +1,12 @@
+env/
+tg-auth/
+data/
+node_modules/
+.git/
+.gitignore
+Dockerfile
+.dockerignore
+data-example.json
+startup.sh
+.DS_Store
+Readme.md

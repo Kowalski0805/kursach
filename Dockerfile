@@ -1,5 +1,9 @@
 FROM node:18-alpine
 
 WORKDIR /home/node/app
-# RUN npm i
+
+COPY . .
+
+RUN npm install
+
 CMD ["npm", "start"]

@@ -1,9 +1,12 @@
 const MTProto = require('@mtproto/core');
 const { sleep } = require('@mtproto/core/src/utils/common');
-const prompt = require('prompt');
+// const prompt = require('prompt');
+const { watch } = require('node:fs/promises');
+const { readFileSync } = require('fs');
 const path = require('path');
 
 const { getEnv } = require('../../config/config');
+const { tgSources } = require('../../sources.json');
 
 const {
   apiId,
@@ -42,12 +45,12 @@ const mtproto = new MTProto({
 const api = {
   call(method, params, options = {}) {
     return mtproto.call(method, params, options).catch(async error => {
-      console.log(`${method} error:`, error);
+      // console.log(`${method} error:`, error);
 
       const { error_code, error_message } = error;
 
       if (error_code === 420) {
-        console.log({error_message})
+        // console.log({error_message})
         const seconds = +error_message.split('FLOOD_WAIT_')[1];
         const ms = seconds * 1000;
 
@@ -123,6 +126,35 @@ function checkPassword({ srp_id, A, M1 }) {
   });
 }
 
+async function getVerificationCode() {
+  let code = '';
+
+  const ac = new AbortController();
+  const { signal } = ac;
+  const timeoutId = setTimeout(() => ac.abort(), 120_000); // 2 minutes wait time for the user to enter the verification code
+
+  const pathToConfigDir = path.resolve(__dirname, '../../tg-auth');
+
+  try {
+    const watcher = watch(pathToConfigDir, { signal });
+    for await (const event of watcher) {
+      const { eventType, filename } = event;
+      if (eventType === 'change' && filename === 'code.txt') {
+        code = readFileSync(`${pathToConfigDir}/code.txt`, 'utf-8').toString().trim();
+        ac.abort();
+        clearTimeout(timeoutId);
+      }
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return code;
+    }
+    throw error;
+  }
+
+  return code;
+}
+
 
 // const phone = '+972545849319'; // SIM 1
 // const phone = '+79990012963'; // SIM 2
@@ -136,9 +168,12 @@ const login = async () => {
   if (!user) {
     const { phone_code_hash } = await sendCode(phoneNumber);
 
-    prompt.start();
+    // prompt.start();
 
-    const {code} = await prompt.get(['code']);
+    // const {code} = await prompt.get(['code']);
+
+    console.log("please, enter verification code in the 'tg-auth/code.txt' file");
+    const code = await getVerificationCode();
 
     try {
       const authResult = await signIn({
@@ -147,7 +182,7 @@ const login = async () => {
         phone_code_hash,
       });
 
-      console.log(`authResult:`, authResult);
+      // console.log(`authResult:`, authResult);
     } catch (error) {
       if (error.error_message !== 'SESSION_PASSWORD_NEEDED') {
         return;
@@ -169,7 +204,7 @@ const login = async () => {
 
       const authResult = await checkPassword({ srp_id, A, M1 });
 
-      console.log(`authResult:`, authResult);
+      // console.log(`authResult:`, authResult);
     }
   }
 };
@@ -194,8 +229,8 @@ const fetchTgData = async() => {
     _: 'inputPeerEmpty',
   } });
 
-  const channels = dialogs.chats.filter((dialog) => dialog._ === 'channel' && ['1449473117', '1134948258'].includes(dialog.id));
-  console.log(channels)
+  const channels = dialogs.chats.filter((dialog) => dialog._ === 'channel' && tgSources.includes(dialog.id));
+  // console.log(channels)
 
   const channelsPromises = channels.flatMap(async (channel) => {
     const channelData = await getChannelData(channel);
