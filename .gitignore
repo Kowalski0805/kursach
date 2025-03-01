@@ -2,3 +2,5 @@ node_modules/
 lib/
 data/
 env/.env
+
+.DS_Store

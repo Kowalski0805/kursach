@@ -254,8 +254,6 @@ const fetchTgData = async() => {
   return result.flatMap(e => e);
 };
 
-fetchTgData();
-
 module.exports = {
   fetchTgData,
 };

@@ -16,7 +16,7 @@ const main = async () => {
     let data = [];
 
     data = data.concat(await fetchRssData());
-    data = data.concat(await fetchTgData());
+    // data = data.concat(await fetchTgData());
 
     const pathToFile = `${pathToDataDir}/data_${uuidv4()}.json`;
 
